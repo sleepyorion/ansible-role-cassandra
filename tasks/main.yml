@@ -1,0 +1,28 @@
+- include: "tarball.yml"
+  when: cassandra_install_mode == "tarball"
+
+- name: create /etc/init.d/cassandra service
+  template: src=cassandra_initd.j2 dest=/etc/init.d/cassandra
+            owner=root group=root mode=0755
+  become: yes
+
+- name: Create {{cassandra_log_dir}} directory
+  file:
+    path: "{{ cassandra_log_dir }}"
+    state: directory
+    mode: 0775
+    recurse: yes
+  become: yes
+
+- name: Create service log file
+  file:
+    path: "{{ cassandra_log_dir }}/service-cassandra.log"
+    state: touch
+  become: yes
+
+- name: start cassandra service 
+  service:
+    name: cassandra
+    enabled: yes
+    state: started
+  become: yes

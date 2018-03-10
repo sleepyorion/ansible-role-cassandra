@@ -1,0 +1,39 @@
+
+- name: check to see if tarball already existed
+  stat: path="/tmp/apache-cassandra-{{cassandra_version}}-bin.tar.gz"
+  register: tarball_check
+
+- name: "Get tarball - {{ cassandra_url }}"
+  get_url:
+    url: "{{ cassandra_url }}"
+    dest: "/tmp/apache-cassandra-{{cassandra_version}}-bin.tar.gz"
+  when: tarball_check.stat.exists == False
+  become: yes
+
+- name: Set cassandra version install dir
+  set_fact:
+    cassandra_version_install_dir: "{{ cassandra_install_dir }}/cassandra/{{ cassandra_version }}"
+
+- name: check to see if tarball successfully downloaded
+  stat: path="/tmp/apache-cassandra-{{cassandra_version}}-bin.tar.gz"
+  register: tarball_check
+
+- name: check to see if install dest doesn't exist
+  stat: path="{{ cassandra_version_install_dir }}"
+  register: cassandra_install_dir_check
+
+- name: Create install dir
+  file:
+    path: "{{ cassandra_version_install_dir }}"
+    state: directory
+    mode: 0775
+    recurse: yes
+  when: cassandra_install_dir_check.stat.exists == False
+  become: yes
+
+- name: extract cassandra {{ cassandra_version }} from archive
+  shell: |
+    tar zxf "/tmp/apache-cassandra-{{cassandra_version}}-bin.tar.gz" --strip-components 1 -C {{ cassandra_version_install_dir }}
+  when: tarball_check.stat.exists == True
+  become: yes
+
